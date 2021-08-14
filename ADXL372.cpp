@@ -121,6 +121,7 @@ uint8_t ADXL372::Update_reg(uint8_t reg_addr, uint8_t mask, uint8_t shift, uint8
   if (err < 0)
     return err;
 
+  reg_data = err;
   reg_data &= ~mask;
   reg_data |= (data << shift) & ~mask;
 
@@ -234,7 +235,7 @@ int16_t ADXL372::ConvertFrom2Complement(uint8_t *high_part, uint8_t *low_part) {
 
 }
 
-uint8_t ADXL372::ReadAccTriplet(struct ADXL372_AccelTriplet *triplet) {
+uint8_t ADXL372::ReadAccTripletReg(struct ADXL372_AccelTriplet *triplet, int reg) {
 
   uint8_t x_data_h = 0;
   uint8_t x_data_l = 0;
@@ -270,6 +271,14 @@ uint8_t ADXL372::ReadAccTriplet(struct ADXL372_AccelTriplet *triplet) {
 
   return true;
 
+}
+
+uint8_t ADXL372::ReadAccTriplet(struct ADXL372_AccelTriplet *triplet) {
+    return ReadAccTripletReg(triplet, ADXL372_X_DATA_H);
+}
+
+uint8_t ADXL372::ReadPeakAccTriplet(struct ADXL372_AccelTriplet *triplet) {
+    return ReadAccTripletReg(triplet, ADXL372_X_MAXPEAK_H);
 }
 
 struct ADXL372_AccelTripletG ADXL372::ConvertAccTripletToG(const struct ADXL372_AccelTriplet *triplet) {
@@ -310,7 +319,7 @@ void ADXL372::reset() {
 
   Set_op_mode(STAND_BY);
   writeRegister(ADXL372_RESET, ADXL372_RESET_CODE);
-  vTaskDelay(10);
+  delay(10);
 }
 
 /*!
@@ -385,7 +394,7 @@ uint8_t ADXL372::readRegisterM(uint8_t reg) {
   if (_sck == -1)
     SPIinterface->beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
   digitalWrite(_cs, LOW);
-  spiTransfer((reg << 1) | 0x01); /* Desloca os bits, seta o LSB em 1 e faz a leitura*/
+  value = spiTransfer((reg << 1) | 0x01); /* Desloca os bits, seta o LSB em 1 e faz a leitura*/
   //digitalWrite(_cs, HIGH);
   if (_sck == -1)
     SPIinterface->endTransaction(); // release the SPI bus
@@ -399,8 +408,6 @@ void ADXL372::GetStatus(
   uint16_t *fifo_entries)
 {
   uint8_t buf[4];
-  int32_t ret;
-
 
   readRegisterM(ADXL372_STATUS_1); // ignore received data during transmit
   buf[0] = spiTransfer(0);

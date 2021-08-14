@@ -231,7 +231,9 @@ class ADXL372 {
     uint8_t GetRevID();
     uint8_t GetDevIDMst();
     uint8_t AddressToSPIData(uint8_t address, uint8_t rw_mask);
+    uint8_t ReadAccTripletReg(struct ADXL372_AccelTriplet *triplet, int reg);
     uint8_t ReadAccTriplet(struct ADXL372_AccelTriplet *triplet);
+    uint8_t ReadPeakAccTriplet(struct ADXL372_AccelTriplet *triplet);
 
     int16_t ConvertFrom2Complement(uint8_t *high_part, uint8_t *low_part);
 
